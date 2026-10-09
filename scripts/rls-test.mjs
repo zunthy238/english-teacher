@@ -92,6 +92,16 @@ try {
     .insert({ user_id: A.id, provider: "openai", ciphertext: "x", iv: "x", tag: "x" });
   check("user_api_keys: el usuario no puede escribirla", Boolean(vaultIns.error), "el insert fue aceptado");
 
+  // 8. Cuota: el usuario puede ver su uso, pero NO alterarlo (lo escribe solo el servidor)
+  const usageRead = await A.client.from("usage_daily").select("requests");
+  check("usage_daily: el usuario puede leer su uso", !usageRead.error, usageRead.error?.message);
+  const usageWrite = await A.client
+    .from("usage_daily")
+    .upsert({ user_id: A.id, day: "2000-01-01", requests: 0 }, { onConflict: "user_id,day" });
+  check("usage_daily: el usuario NO puede alterar su cuota", Boolean(usageWrite.error), "la escritura fue aceptada");
+  const rpc = await A.client.rpc("consume_request", { p_user: A.id, p_limit: 999 });
+  check("consume_request: el navegador NO puede llamarla", Boolean(rpc.error), "la función respondió");
+
   // Limpieza: A borra su dato de prueba
   await A.client.from("errors").delete().eq("error_type", TEST_TYPE);
 } catch (e) {
