@@ -1,10 +1,8 @@
 // app/(app)/today/page.tsx
+// CP-0.5: lecciones de prueba. CP-3: vendrá de /api/lesson (caché o IA).
+import { TodayView } from "@/components/lesson/today-view";
+import { MOCK_LESSONS } from "@/lib/mock/lessons";
+
 export default function TodayPage() {
-  return (
-    <section className="space-y-2">
-      <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Hoy</p>
-      <h1 className="text-2xl font-semibold">Lección del día</h1>
-      <p className="text-zinc-500">Aquí aparecerá tu lección con ejercicios.</p>
-    </section>
-  );
+  return <TodayView lessons={MOCK_LESSONS} />;
 }
