@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  // Permite abrir la app en desarrollo desde el celular (red local).
+  // Si cambia la IP, usa la que muestra "Network" en npm run dev.
+  allowedDevOrigins: ["192.168.1.12"],
   turbopack: {
     rules: {
       "*.css": {
