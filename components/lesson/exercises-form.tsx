@@ -15,6 +15,7 @@ import type {
 import { isClosedExercise } from "@/lib/schemas/lesson";
 import { gradeLesson, type LessonGrade } from "@/lib/grade";
 import { SpeakButton } from "./speak-button";
+import { WritingExercise } from "./writing-exercise";
 
 // Frase completa y correcta, para escucharla después de calificar
 function correctSentence(ex: ClosedExercise): string {
@@ -185,8 +186,10 @@ function ScoreBanner({ grade }: { grade: LessonGrade }) {
 export function ExercisesForm({
   exercises,
   onGraded,
+  topicKey,
 }: {
   exercises: Exercise[];
+  topicKey?: string; // con tema, el writing se corrige con IA
   // CP-4: avisa a la pantalla para guardar el resultado (attempt 0 = primer intento)
   onGraded?: (grade: LessonGrade, attempt: number) => void;
 }) {
@@ -272,7 +275,10 @@ export function ExercisesForm({
       {open.length > 0 && (
         <div className="space-y-3 pt-6">
           <h2 className={sectionTitle}>Práctica libre</h2>
-          {open.map((ex) => (
+          {open.map((ex) =>
+            ex.type === "writing" && topicKey ? (
+              <WritingExercise key={ex.id} topicKey={topicKey} task={ex.prompt} />
+            ) : (
             <div
               key={ex.id}
               className="rounded-2xl border border-dashed border-zinc-300 p-5 dark:border-zinc-700"
@@ -289,7 +295,8 @@ export function ExercisesForm({
               </div>
               <p>{ex.prompt}</p>
             </div>
-          ))}
+            ),
+          )}
         </div>
       )}
     </section>

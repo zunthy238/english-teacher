@@ -145,7 +145,7 @@ export function DailyLesson() {
       </div>
 
       <LessonContent lesson={lesson} />
-      <ExercisesForm key={`${meta.topic_key}-${meta.variant}`} exercises={lesson.exercises} onGraded={saveResult} />
+      <ExercisesForm key={`${meta.topic_key}-${meta.variant}`} exercises={lesson.exercises} onGraded={saveResult} topicKey={meta.topic_key} />
 
       {save.status === "saving" && (
         <p className="flex items-center gap-2 text-sm text-zinc-500">

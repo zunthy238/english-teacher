@@ -39,7 +39,7 @@ export type DailyLesson = {
 };
 
 // Gasta 1 de cuota y devuelve la key del usuario, o lanza un error claro para la pantalla.
-async function chargeAndGetKey(userId: string) {
+export async function chargeAndGetKey(userId: string) {
   const key = await resolveKey(userId);
   if (!key) throw new LessonError("Registra tu API key en Ajustes para generar lecciones.", 409, "no_key");
   const quota = await consumeRequest(userId);
@@ -49,7 +49,7 @@ async function chargeAndGetKey(userId: string) {
 }
 
 // Llama a la IA y valida; reintenta 1 vez si la salida no cumple las reglas.
-async function generateValidated<T>(
+export async function generateValidated<T>(
   key: Awaited<ReturnType<typeof chargeAndGetKey>>,
   prompt: { system: string; user: string },
   schemaName: string,
@@ -74,7 +74,7 @@ async function generateValidated<T>(
   throw new LessonError("La IA generó una lección con errores. Intenta de nuevo.", 502, "bad_output");
 }
 
-async function getProfile(userId: string): Promise<{ level: CefrLevel; exam: string }> {
+export async function getProfile(userId: string): Promise<{ level: CefrLevel; exam: string }> {
   const { data } = await createAdminClient()
     .from("profile")
     .select("cefr_level, target_exam")
