@@ -103,10 +103,13 @@ async function ensureCurriculum(userId: string, level: CefrLevel, exam: string):
     validateCurriculum(raw, level),
   );
   const rows = topics.map((t, i) => ({ ...t, cefr_level: level, position: i + 1 }));
-  const { error } = await createAdminClient()
-    .from("curriculum")
-    .upsert(rows, { onConflict: "topic_key", ignoreDuplicates: true });
-  if (error) throw new LessonError("No se pudo guardar el currículo.", 500, "db");
+  const { error } = await createAdminClient().from("curriculum").insert(rows);
+  if (error) {
+    // Otra petición guardó el currículo al mismo tiempo (índice único nivel+posición): se usa ese
+    const saved = await getCurriculum(level);
+    if (saved.length) return saved;
+    throw new LessonError("No se pudo guardar el currículo.", 500, "db");
+  }
   return getCurriculum(level);
 }
 

@@ -14,6 +14,13 @@ import type {
 } from "@/lib/schemas/lesson";
 import { isClosedExercise } from "@/lib/schemas/lesson";
 import { gradeLesson, type LessonGrade } from "@/lib/grade";
+import { SpeakButton } from "./speak-button";
+
+// Frase completa y correcta, para escucharla después de calificar
+function correctSentence(ex: ClosedExercise): string {
+  if (ex.type === "word_order") return ex.answer;
+  return ex.prompt.includes("___") ? ex.prompt.replace("___", ex.answer).replace(/\s*\([^)]*\)/g, "") : ex.answer;
+}
 
 const LABELS: Record<ClosedExercise["type"], string> = {
   multiple_choice: "Elige la opción correcta",
@@ -175,7 +182,14 @@ function ScoreBanner({ grade }: { grade: LessonGrade }) {
   );
 }
 
-export function ExercisesForm({ exercises }: { exercises: Exercise[] }) {
+export function ExercisesForm({
+  exercises,
+  onGraded,
+}: {
+  exercises: Exercise[];
+  // CP-4: avisa a la pantalla para guardar el resultado (attempt 0 = primer intento)
+  onGraded?: (grade: LessonGrade, attempt: number) => void;
+}) {
   const closed = exercises.filter(isClosedExercise);
   const open = exercises.filter((e): e is OpenExercise => !isClosedExercise(e));
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -188,7 +202,9 @@ export function ExercisesForm({ exercises }: { exercises: Exercise[] }) {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   function submit() {
-    setGrade(gradeLesson(exercises, answers));
+    const result = gradeLesson(exercises, answers);
+    setGrade(result);
+    onGraded?.(result, attempt);
     scrollTop();
   }
 
@@ -226,16 +242,18 @@ export function ExercisesForm({ exercises }: { exercises: Exercise[] }) {
                 onChange={(v) => setAnswers((a) => ({ ...a, [ex.id]: v }))}
                 disabled={grade !== null}
               />
-              {result &&
-                (result.correct ? (
-                  <p className="mt-3 text-sm font-medium text-green-600 dark:text-green-400">
-                    ✓ Correcto
-                  </p>
-                ) : (
-                  <p className="mt-3 text-sm text-red-600 dark:text-red-400">
-                    ✗ Respuesta correcta: <strong>{result.expected}</strong>
-                  </p>
-                ))}
+              {result && (
+                <div className="mt-3 flex items-center gap-2">
+                  <SpeakButton text={correctSentence(ex)} label="Escuchar la frase correcta" />
+                  {result.correct ? (
+                    <p className="text-sm font-medium text-green-600 dark:text-green-400">✓ Correcto</p>
+                  ) : (
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      ✗ Respuesta correcta: <strong>{result.expected}</strong>
+                    </p>
+                  )}
+                </div>
+              )}
             </li>
           );
         })}

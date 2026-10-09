@@ -3,9 +3,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { Loader2, RefreshCw, Sparkles, Database } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowRight, CheckCircle2, Loader2, RefreshCw, Sparkles, Database } from "lucide-react";
 import type { Lesson } from "@/lib/schemas/lesson";
+import type { LessonGrade } from "@/lib/grade";
+import { buildErrorExamples } from "@/lib/progress-input";
 import { LessonContent } from "./lesson-content";
 import { ExercisesForm } from "./exercises-form";
 
@@ -21,13 +23,21 @@ type State =
   | { status: "loading"; slow: boolean }
   | { status: "error"; message: string; code: string }
   | { status: "ready"; lesson: Lesson; meta: Meta };
+type SaveState =
+  | { status: "idle" }
+  | { status: "saving" }
+  | { status: "saved"; completed: boolean; score: number }
+  | { status: "error" };
 
 export function DailyLesson() {
   const [state, setState] = useState<State>({ status: "loading", slow: false });
   const [busy, setBusy] = useState(false);
+  const [save, setSave] = useState<SaveState>({ status: "idle" });
+  const startedAt = useRef(0);
 
   const load = useCallback(async (newVariant: boolean) => {
     setBusy(true);
+    setSave({ status: "idle" });
     setState({ status: "loading", slow: false });
     // Si tarda, probablemente la IA está generando: se avisa al estudiante
     const slowTimer = setTimeout(() => setState((s) => (s.status === "loading" ? { status: "loading", slow: true } : s)), 2500);
@@ -38,6 +48,7 @@ export function DailyLesson() {
         setState({ status: "error", message: body.error ?? "No se pudo cargar la lección.", code: body.code ?? "unknown" });
       } else {
         setState({ status: "ready", lesson: body.lesson, meta: body.meta });
+        startedAt.current = Date.now();
         if (newVariant) window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch {
@@ -48,9 +59,36 @@ export function DailyLesson() {
     }
   }, []);
 
+  // En desarrollo React monta los componentes dos veces: el ref evita pedir (y pagar) la lección dos veces
+  const requested = useRef(false);
   useEffect(() => {
+    if (requested.current) return;
+    requested.current = true;
     void load(false);
   }, [load]);
+
+  // Guarda el resultado al calificar: sesión, errores (solo 1er intento) y tema completado si saca 80+
+  async function saveResult(grade: LessonGrade, attempt: number) {
+    if (state.status !== "ready") return;
+    setSave({ status: "saving" });
+    try {
+      const res = await fetch("/api/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic_key: state.meta.topic_key,
+          score: grade.score,
+          minutes: (Date.now() - startedAt.current) / 60000,
+          first_attempt: attempt === 0,
+          errors: buildErrorExamples(state.lesson.exercises, grade.results),
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      setSave(res.ok ? { status: "saved", completed: body.completed === true, score: grade.score } : { status: "error" });
+    } catch {
+      setSave({ status: "error" });
+    }
+  }
 
   if (state.status === "loading") {
     return (
@@ -107,7 +145,40 @@ export function DailyLesson() {
       </div>
 
       <LessonContent lesson={lesson} />
-      <ExercisesForm key={`${meta.topic_key}-${meta.variant}`} exercises={lesson.exercises} />
+      <ExercisesForm key={`${meta.topic_key}-${meta.variant}`} exercises={lesson.exercises} onGraded={saveResult} />
+
+      {save.status === "saving" && (
+        <p className="flex items-center gap-2 text-sm text-zinc-500">
+          <Loader2 className="size-4 animate-spin" aria-hidden /> Guardando tu progreso…
+        </p>
+      )}
+      {save.status === "error" && (
+        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          No se pudo guardar tu progreso. Revisa tu conexión y vuelve a calificar.
+        </p>
+      )}
+      {save.status === "saved" &&
+        (save.completed ? (
+          <div className="space-y-3 rounded-2xl bg-green-50 p-5 text-green-900 dark:bg-green-950 dark:text-green-100">
+            <p className="flex items-center gap-2 font-semibold">
+              <CheckCircle2 className="size-5" aria-hidden /> ¡Tema completado! Progreso guardado.
+            </p>
+            {meta.position < meta.total && (
+              <button
+                type="button"
+                onClick={() => load(false)}
+                disabled={busy}
+                className="inline-flex items-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-50"
+              >
+                Siguiente tema <ArrowRight className="size-4" aria-hidden />
+              </button>
+            )}
+          </div>
+        ) : (
+          <p className="rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+            Progreso guardado. Necesitas 80 o más para avanzar al siguiente tema: repasa y vuelve a intentarlo.
+          </p>
+        ))}
 
       <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
         <button

@@ -75,7 +75,7 @@ export function validateLesson(
   const title = str(raw.title);
   const explanation_es = str(raw.explanation_es);
   if (!title) errors.push("Falta title");
-  if (explanation_es.length < 40) errors.push("Explicación demasiado corta");
+  if (explanation_es.length < 250) errors.push("Explicación demasiado corta");
 
   const translate = ["A1", "A2", "B1"].includes(ctx.cefr_level);
   const seenEn = new Set<string>();
