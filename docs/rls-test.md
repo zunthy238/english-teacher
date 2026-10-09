@@ -1,10 +1,10 @@
 # Prueba de aislamiento RLS — CP-1
 
-- Fecha: 2026-10-09
+- Fecha: 2026-10-09 (CP-1 y CP-2)
 - Comando: `npm run test:rls` (script `scripts/rls-test.mjs`)
 - Llave usada: publishable (la misma del navegador). Sin llave secreta.
 - Usuarios: A (dueño) y B (`+prueba`), creados a mano con registro público desactivado.
-- Resultado: **13/13 correctas**
+- Resultado CP-1: **13/13 correctas** · Resultado CP-2 (tras migración 0002): **16/16 correctas**
 
 | # | Verificación | Resultado |
 |---|---|---|
@@ -21,5 +21,8 @@
 | 11 | Sin login NO se ven errores | ✓ |
 | 12 | user_api_keys: el usuario no puede leerla | ✓ |
 | 13 | user_api_keys: el usuario no puede escribirla | ✓ |
+| 14 | usage_daily: el usuario puede leer su uso | ✓ |
+| 15 | usage_daily: el usuario NO puede alterar su cuota | ✓ |
+| 16 | consume_request: el navegador NO puede llamarla | ✓ |
 
 Volver a correr esta prueba después de cada migración que toque tablas o políticas.

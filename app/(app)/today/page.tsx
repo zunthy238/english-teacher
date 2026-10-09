@@ -1,8 +1,7 @@
 // app/(app)/today/page.tsx
-// CP-0.5: lecciones de prueba. CP-3: vendrá de /api/lesson (caché o IA).
-import { TodayView } from "@/components/lesson/today-view";
-import { MOCK_LESSONS } from "@/lib/mock/lessons";
+// CP-3: la lección viene de /api/lesson (caché compartido o IA con la key del usuario).
+import { DailyLesson } from "@/components/lesson/daily-lesson";
 
 export default function TodayPage() {
-  return <TodayView lessons={MOCK_LESSONS} />;
+  return <DailyLesson />;
 }
