@@ -19,7 +19,9 @@ Devuelve:
 - score: 0 a 100 según el nivel ${i.level} (cumplimiento de la consigna, gramática, vocabulario, claridad).
 - strengths: máximo 2 cosas que hizo bien, ${spanish ? "en español" : "en inglés"}, concretas.
 - next_focus: UNA sola cosa en la que debe enfocarse, ${spanish ? "en español" : "en inglés"}.
-Sé exigente y cálido. No inventes errores.`,
+Sé exigente y cálido. No inventes errores.
+Las contracciones (I'm, don't, doesn't, can't…) son correctas y naturales: nunca las corrijas como error; en
+improved_version úsalas como lo haría un nativo de EE. UU. en un mensaje de trabajo.`,
   };
 }
 

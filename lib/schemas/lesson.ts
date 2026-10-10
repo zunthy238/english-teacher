@@ -16,20 +16,24 @@ export type VocabularyItem = {
 
 type BaseExercise = { id: string; prompt: string };
 
-export type MultipleChoiceExercise = BaseExercise & {
+// Respuestas alternativas igual de válidas (otro orden natural, otra forma correcta).
+// Las contracciones (doesn't = does not) ya se aceptan siempre en lib/grade.ts.
+type Accepts = { accepted?: string[] };
+
+export type MultipleChoiceExercise = BaseExercise & Accepts & {
   type: "multiple_choice";
   options: string[];
   answer: string;
   error_type: string;
 };
 
-export type FillBlankExercise = BaseExercise & {
+export type FillBlankExercise = BaseExercise & Accepts & {
   type: "fill_blank";
   answer: string;
   error_type: string;
 };
 
-export type WordOrderExercise = BaseExercise & {
+export type WordOrderExercise = BaseExercise & Accepts & {
   type: "word_order";
   words: string[]; // palabras desordenadas
   answer: string; // frase correcta completa

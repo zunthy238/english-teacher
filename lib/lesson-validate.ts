@@ -1,7 +1,7 @@
 // lib/lesson-validate.ts
 // Revisa y normaliza lo que devuelve la IA antes de guardarlo en caché.
 // Si algo no cumple, la lección se rechaza (y se reintenta) en vez de mostrar un ejercicio roto.
-import { normalize } from "./grade";
+import { normalize, sameAnswer } from "./grade";
 import type {
   CefrLevel,
   ClosedExercise,
@@ -24,11 +24,35 @@ export function toSnakeCase(value: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
+// Palabras gramaticales que, como pista, regalarían la respuesta
+const FUNCTION_WORDS = new Set([
+  "a", "an", "the", "from", "in", "on", "at", "to", "of", "for", "with", "by", "about",
+  "this", "that", "these", "those", "some", "any", "my", "your", "his", "her", "our", "their",
+]);
+
+// Palabras que ya aparecen justo después del "___" (para no repetirlas en la respuesta)
+function wordsAfterBlank(prompt: string): string[] {
+  const after = prompt.split("___")[1] ?? "";
+  return normalize(after.replace(/\([^)]*\)/g, " ")).split(" ").filter(Boolean);
+}
+
+export function trimRepeatedTail(prompt: string, answer: string): string {
+  const after = wordsAfterBlank(prompt);
+  const ans = answer.trim().split(/\s+/);
+  // Quita del final de la respuesta las palabras que la frase ya trae después del espacio
+  for (let k = Math.min(after.length, ans.length - 1); k > 0; k--) {
+    const tail = ans.slice(ans.length - k).map((w) => normalize(w)).join(" ");
+    if (tail === after.slice(0, k).join(" ")) return ans.slice(0, ans.length - k).join(" ");
+  }
+  return answer.trim();
+}
+
 function closedExercise(raw: Record<string, unknown>, id: string, errors: string[]): ClosedExercise | null {
   const type = raw.type;
   const prompt = str(raw.prompt);
   const answer = str(raw.answer);
   const error_type = toSnakeCase(str(raw.error_type)) || "general";
+  const accepted = strArr(raw.accepted_answers).slice(0, 5);
   if (!prompt || !answer) {
     errors.push(`${id}: falta prompt o answer`);
     return null;
@@ -39,15 +63,25 @@ function closedExercise(raw: Record<string, unknown>, id: string, errors: string
     const match = options.find((o) => normalize(o) === normalize(answer));
     if (options.length < 2 || options.length > 5) errors.push(`${id}: opciones inválidas`);
     else if (!match) errors.push(`${id}: la respuesta no está entre las opciones`);
-    else return { id, type, prompt, options, answer: match, error_type };
+    else return { id, type, prompt, options, answer: match, accepted: accepted.filter((a) => options.some((o) => sameAnswer(o, a))), error_type };
     return null;
   }
 
   if (type === "fill_blank") {
-    if (!prompt.includes("___")) errors.push(`${id}: fill_blank sin "___"`);
-    else if (answer.split(/\s+/).length > 4) errors.push(`${id}: respuesta demasiado larga`);
-    else return { id, type, prompt, answer, error_type };
-    return null;
+    if (!prompt.includes("___")) {
+      errors.push(`${id}: fill_blank sin "___"`);
+      return null;
+    }
+    const fixed = trimRepeatedTail(prompt, answer);
+    // Una pista que regala la respuesta (ej. "(from)") se quita. Un verbo base sí puede coincidir: "I ___ (go)".
+    const hint = prompt.match(/\(([^)]*)\)/)?.[1] ?? "";
+    const giveaway = hint && sameAnswer(hint, fixed) && FUNCTION_WORDS.has(normalize(hint));
+    const cleanPrompt = giveaway ? prompt.replace(/\s*\([^)]*\)/, "") : prompt;
+    if (fixed.split(/\s+/).length > 4) {
+      errors.push(`${id}: respuesta demasiado larga`);
+      return null;
+    }
+    return { id, type, prompt: cleanPrompt, answer: fixed, accepted: accepted.map((a) => trimRepeatedTail(prompt, a)), error_type };
   }
 
   if (type === "word_order") {
@@ -57,7 +91,12 @@ function closedExercise(raw: Record<string, unknown>, id: string, errors: string
     if (words.length < 2 || words.length > 14) errors.push(`${id}: cantidad de palabras inválida`);
     else if (JSON.stringify(fromWords) !== JSON.stringify(fromAnswer))
       errors.push(`${id}: las palabras no coinciden con la respuesta`);
-    else return { id, type, prompt, words, answer: answer.replace(/[.!]$/, ""), error_type };
+    else {
+      // La instrucción nunca debe revelar la frase
+      const safePrompt = normalize(prompt).includes(normalize(answer)) ? "Ordena las palabras para formar la frase." : prompt;
+      const sameWords = (a: string) => JSON.stringify(normalize(a).split(" ").sort()) === JSON.stringify(fromAnswer);
+      return { id, type, prompt: safePrompt, words, answer: answer.replace(/[.!]$/, ""), accepted: accepted.filter(sameWords), error_type };
+    }
     return null;
   }
 

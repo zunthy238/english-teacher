@@ -14,6 +14,32 @@ export function normalize(text: string): string {
     .trim();
 }
 
+// Contracciones: "doesn't go" y "does not go" son la misma respuesta.
+const CONTRACTIONS: [RegExp, string][] = [
+  [/\bwon't\b/g, "will not"],
+  [/\bcan't\b/g, "can not"],
+  [/\bcannot\b/g, "can not"],
+  [/\bshan't\b/g, "shall not"],
+  [/\bain't\b/g, "am not"],
+  [/n't\b/g, " not"],
+  [/'m\b/g, " am"],
+  [/'re\b/g, " are"],
+  [/'ve\b/g, " have"],
+  [/'ll\b/g, " will"],
+  [/'d\b/g, " would"],
+  [/\b(he|she|it|that|what|who|where|there|here|how)'s\b/g, "$1 is"],
+];
+
+export function expandContractions(text: string): string {
+  let out = normalize(text);
+  for (const [re, rep] of CONTRACTIONS) out = out.replace(re, rep);
+  return out.replace(/\s+/g, " ").trim();
+}
+
+export function sameAnswer(a: string, b: string): boolean {
+  return expandContractions(a) === expandContractions(b);
+}
+
 export type GradeResult = {
   exerciseId: string;
   correct: boolean;
@@ -25,7 +51,7 @@ export type GradeResult = {
 export function gradeExercise(ex: ClosedExercise, given: string): GradeResult {
   return {
     exerciseId: ex.id,
-    correct: normalize(given) === normalize(ex.answer),
+    correct: [ex.answer, ...(ex.accepted ?? [])].some((ans) => sameAnswer(given, ans)),
     expected: ex.answer,
     given,
     error_type: ex.error_type,
