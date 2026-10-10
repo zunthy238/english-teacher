@@ -3,11 +3,13 @@
 // Orden pedagógico: aprende (poco texto) → escucha ejemplos → vocabulario → practica → escribe → cierre.
 import type { ClosedExercise, Example, Lesson, VocabularyItem } from "./schemas/lesson";
 import { isClosedExercise } from "./schemas/lesson";
+import type { ReviewItem } from "./review-input";
 
-export type Block = "learn" | "listen" | "vocab" | "practice" | "write";
+export type Block = "review" | "learn" | "listen" | "vocab" | "practice" | "write";
 
 export type SessionStep =
   | { kind: "intro" }
+  | { kind: "review"; card: ReviewItem; index: number; total: number }
   | { kind: "learn"; text: string; index: number; total: number }
   | { kind: "example"; example: Example; index: number; total: number }
   | { kind: "vocab"; item: VocabularyItem; index: number; total: number }
@@ -15,7 +17,7 @@ export type SessionStep =
   | { kind: "write"; task: string }
   | { kind: "done" };
 
-export const LIMITS = { learnCards: 3, examples: 4, vocab: 6 } as const;
+export const LIMITS = { learnCards: 3, examples: 4, vocab: 6, review: 8 } as const;
 
 // Parte la explicación en tarjetas cortas: por párrafos; si es un solo bloque, por oraciones.
 export function chunkExplanation(text: string, maxCards: number = LIMITS.learnCards): string[] {
@@ -40,6 +42,8 @@ export function chunkExplanation(text: string, maxCards: number = LIMITS.learnCa
 
 export function blockOf(step: SessionStep): Block | null {
   switch (step.kind) {
+    case "review":
+      return "review";
     case "learn":
       return "learn";
     case "example":
@@ -55,14 +59,18 @@ export function blockOf(step: SessionStep): Block | null {
   }
 }
 
-export function buildSession(lesson: Lesson): SessionStep[] {
+// El repaso va primero: calienta la memoria con lo que estás por olvidar
+export function buildSession(lesson: Lesson, reviews: ReviewItem[] = []): SessionStep[] {
   const learn = chunkExplanation(lesson.explanation_es);
   const examples = lesson.examples.slice(0, LIMITS.examples);
   const vocab = lesson.vocabulary.slice(0, LIMITS.vocab);
   const closed = lesson.exercises.filter(isClosedExercise);
   const writing = lesson.exercises.find((e) => e.type === "writing");
 
+  const due = reviews.slice(0, LIMITS.review);
+
   const steps: SessionStep[] = [{ kind: "intro" }];
+  due.forEach((card, i) => steps.push({ kind: "review", card, index: i + 1, total: due.length }));
   learn.forEach((text, i) => steps.push({ kind: "learn", text, index: i + 1, total: learn.length }));
   examples.forEach((example, i) => steps.push({ kind: "example", example, index: i + 1, total: examples.length }));
   vocab.forEach((item, i) => steps.push({ kind: "vocab", item, index: i + 1, total: vocab.length }));

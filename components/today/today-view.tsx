@@ -1,7 +1,7 @@
 // components/today/today-view.tsx
 // Pantalla Hoy: el plan del día. Una sola acción principal: empezar la sesión.
 import Link from "next/link";
-import { ArrowRight, BookOpen, Briefcase, Flame, PenLine, Sparkles, Target } from "lucide-react";
+import { ArrowRight, BookOpen, Briefcase, Flame, Layers, PenLine, Sparkles, Target } from "lucide-react";
 import type { TodayPlan } from "@/lib/today-plan";
 
 const RING = 2 * Math.PI * 34;
@@ -12,8 +12,15 @@ const STEPS = [
   { n: 3, label: "Escribe", desc: "Tus frases, corregidas por Professor Mike", min: "5 min", color: "bg-write text-white", Icon: PenLine },
 ];
 
-export function TodayView({ plan }: { plan: TodayPlan }) {
+export function TodayView({ plan, reviewDue }: { plan: TodayPlan; reviewDue: number }) {
   const offset = RING * (1 - plan.goalPct / 100);
+  const reviewInSession = Math.min(reviewDue, 8);
+  const steps = [
+    ...(reviewInSession > 0
+      ? [{ n: 0, label: "Repaso", desc: `${reviewInSession} ${reviewInSession === 1 ? "tarjeta que estás" : "tarjetas que estás"} por olvidar`, min: `${Math.max(1, Math.round(reviewInSession / 2))} min`, color: "bg-review text-white", Icon: Layers }]
+      : []),
+    ...STEPS,
+  ];
   const cta = plan.allDone
     ? "Repasar el nivel"
     : plan.studiedToday
@@ -89,9 +96,9 @@ export function TodayView({ plan }: { plan: TodayPlan }) {
           Así será tu sesión · ~18 min
         </h2>
         <ol className="mt-4">
-          {STEPS.map(({ n, label, desc, min, color, Icon }, idx) => (
+          {steps.map(({ n, label, desc, min, color, Icon }, idx) => (
             <li key={n} className="relative flex gap-4 pb-5 last:pb-0">
-              {idx < STEPS.length - 1 && (
+              {idx < steps.length - 1 && (
                 <span className="absolute left-5 top-11 h-[calc(100%-36px)] w-0.5 bg-line" aria-hidden />
               )}
               <span className={`relative flex size-10 shrink-0 items-center justify-center rounded-full ${color}`}>
@@ -108,16 +115,27 @@ export function TodayView({ plan }: { plan: TodayPlan }) {
         </ol>
         <p className="mt-4 flex items-center gap-2 border-t border-line pt-4 text-sm text-muted">
           <Sparkles className="size-4 shrink-0 text-brand" aria-hidden strokeWidth={2.2} />
-          Próximamente: repaso inteligente, escucha y habla.
+          Próximamente: escucha con historias y habla con Professor Mike.
         </p>
       </section>
+
+      {reviewDue > 8 && (
+        <Link href="/review" className="flex items-center gap-4 rounded-[22px] bg-review px-5 py-4 text-white pm-rise">
+          <Layers className="size-8 shrink-0" aria-hidden strokeWidth={2} />
+          <div className="flex-1">
+            <p className="font-extrabold">{reviewDue} tarjetas para repasar</p>
+            <p className="text-sm text-white/85">Ponte al día en la pestaña Repaso</p>
+          </div>
+          <ArrowRight className="size-5" aria-hidden />
+        </Link>
+      )}
 
       {/* Ruta profesional */}
       <section className="flex items-center gap-4 rounded-[22px] bg-[#ddf5ef] px-5 py-4 text-[#0b5148] pm-rise">
         <Briefcase className="size-8 shrink-0" aria-hidden strokeWidth={2} />
         <div>
-          <p className="font-extrabold">Ruta Power Apps English</p>
-          <p className="text-sm">Standups, demos, requisitos y entrevistas · próximamente</p>
+          <p className="font-extrabold">Inglés para tu trabajo</p>
+          <p className="text-sm">Reuniones, correos y entrevistas de desarrollador · próximamente</p>
         </div>
       </section>
     </div>

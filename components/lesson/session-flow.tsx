@@ -13,6 +13,8 @@ import { blockOf, buildSession, correctSentence, type Block, type SessionStep } 
 import { speak, vibrate } from "./speech";
 import { WritingExercise } from "./writing-exercise";
 import { ReportExercise } from "./report-exercise";
+import { ReviewCard } from "@/components/review/review-card";
+import type { ReviewItem } from "@/lib/review-input";
 
 export type SessionMeta = {
   topic_key: string;
@@ -30,6 +32,7 @@ export type SaveStatus =
   | { status: "error" };
 
 const THEME: Record<Block, { card: string; label: string; tag: string; bar: string }> = {
+  review: { card: "bg-review text-white", label: "Repaso", tag: "text-review", bar: "bg-review" },
   learn: { card: "bg-learn text-[#2b1d00]", label: "Aprende", tag: "text-[#8a5a00]", bar: "bg-learn" },
   listen: { card: "bg-listen text-white", label: "Escucha", tag: "text-listen", bar: "bg-listen" },
   vocab: { card: "bg-review text-white", label: "Vocabulario", tag: "text-review", bar: "bg-review" },
@@ -132,6 +135,7 @@ function WordChips({ ex, onChange, locked }: {
 
 export function SessionFlow({
   lesson,
+  reviews,
   meta,
   attempt,
   save,
@@ -141,6 +145,7 @@ export function SessionFlow({
   onNewVersion,
 }: {
   lesson: Lesson;
+  reviews: ReviewItem[];
   meta: SessionMeta;
   attempt: number;
   save: SaveStatus;
@@ -149,7 +154,7 @@ export function SessionFlow({
   onNextTopic: () => void;
   onNewVersion: () => void;
 }) {
-  const steps = useMemo(() => buildSession(lesson), [lesson]);
+  const steps = useMemo(() => buildSession(lesson, reviews), [lesson, reviews]);
   const [i, setI] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -165,6 +170,7 @@ export function SessionFlow({
     examples: steps.filter((s) => s.kind === "example").length,
     vocab: steps.filter((s) => s.kind === "vocab").length,
     exercises: steps.filter((s) => s.kind === "exercise").length,
+    review: steps.filter((s) => s.kind === "review").length,
   };
 
   function goNext() {
@@ -219,6 +225,11 @@ export function SessionFlow({
                 </span>
                 <h1 className="font-display text-4xl font-extrabold leading-[1.05] tracking-tight">{lesson.title}</h1>
                 <p className="text-lg text-muted">Una tarjeta a la vez. Escucha, descubre y practica.</p>
+                {counts.review > 0 && (
+                  <p className="rounded-2xl bg-review px-4 py-3 font-bold text-white">
+                    Primero repasas {counts.review} {counts.review === 1 ? "tarjeta" : "tarjetas"} que estás por olvidar
+                  </p>
+                )}
                 <ul className="mt-2 grid grid-cols-2 gap-2.5">
                   <li className="rounded-2xl bg-learn px-4 py-3 font-bold text-[#2b1d00]">{counts.learn} ideas clave</li>
                   <li className="rounded-2xl bg-listen px-4 py-3 font-bold text-white">{counts.examples} frases para escuchar</li>
@@ -229,6 +240,16 @@ export function SessionFlow({
               <button type="button" className={primaryBtn} onClick={goNext}>
                 Empezar <ArrowRight className="size-5" aria-hidden strokeWidth={2.6} />
               </button>
+            </div>
+          )}
+
+          {/* REPASO: lo que estás por olvidar (FSRS) */}
+          {step.kind === "review" && theme && (
+            <div className="flex flex-1 flex-col gap-5">
+              <p className={`text-sm font-extrabold uppercase tracking-widest ${theme.tag}`}>
+                {theme.label} · {step.index} de {step.total}
+              </p>
+              <ReviewCard key={step.card.id} card={step.card} onDone={goNext} />
             </div>
           )}
 

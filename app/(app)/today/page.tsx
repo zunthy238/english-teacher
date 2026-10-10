@@ -22,10 +22,11 @@ async function TodayData() {
   const level = (profile?.cefr_level ?? "A1") as CefrLevel;
   const since = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [topics, progress, sessions] = await Promise.all([
+  const [topics, progress, sessions, reviewDue] = await Promise.all([
     supabase.from("curriculum").select("topic_key, title, position").eq("cefr_level", level),
     supabase.from("user_topic_progress").select("topic_key").eq("completed", true),
     supabase.from("sessions").select("created_at, minutes").gte("created_at", since),
+    supabase.from("review_cards").select("*", { count: "exact", head: true }).lte("due_at", new Date().toISOString()),
   ]);
 
   const now = new Date();
@@ -50,7 +51,7 @@ async function TodayData() {
     completed: (progress.data ?? []).map((r) => r.topic_key),
   });
 
-  return <TodayView plan={plan} />;
+  return <TodayView plan={plan} reviewDue={reviewDue.count ?? 0} />;
 }
 
 export default function TodayPage() {

@@ -102,6 +102,16 @@ try {
   const rpc = await A.client.rpc("consume_request", { p_user: A.id, p_limit: 999 });
   check("consume_request: el navegador NO puede llamarla", Boolean(rpc.error), "la función respondió");
 
+  // 9. Tarjetas de repaso: privadas de cada usuario
+  const cardIns = await A.client
+    .from("review_cards")
+    .insert({ user_id: A.id, kind: "vocab", front: "rls_test_card", back: "x", fsrs: {}, due_at: new Date().toISOString() })
+    .select("id");
+  check("review_cards: A puede crear su tarjeta", !cardIns.error && cardIns.data?.length === 1, cardIns.error?.message);
+  const bCards = await B.client.from("review_cards").select("id").eq("user_id", A.id);
+  check("review_cards: B NO ve las tarjetas de A", !bCards.error && bCards.data?.length === 0, bCards.error?.message);
+  await A.client.from("review_cards").delete().eq("front", "rls_test_card");
+
   // Limpieza: A borra su dato de prueba
   await A.client.from("errors").delete().eq("error_type", TEST_TYPE);
 } catch (e) {

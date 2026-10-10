@@ -3,7 +3,7 @@
 -- Borra: temas completados, sesiones, errores, lecciones vistas, vocabulario y uso del día. Lo deja en A1.
 do $$
 declare
-  v_email text := 'CORREO-DEL-USUARIO@ejemplo.com';
+  v_email text := 'daro1995@hotmail.com';
   v_user uuid;
 begin
   select id into v_user from auth.users where email = v_email;

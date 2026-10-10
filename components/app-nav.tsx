@@ -4,10 +4,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Mic, TrendingUp, Settings } from "lucide-react";
+import { Home, Layers, Mic, TrendingUp, Settings } from "lucide-react";
 
 const ITEMS = [
   { href: "/today", match: ["/today", "/lesson"], label: "Hoy", Icon: Home },
+  { href: "/review", match: ["/review"], label: "Repaso", Icon: Layers },
   { href: "/practice", match: ["/practice"], label: "Hablar", Icon: Mic },
   { href: "/progress", match: ["/progress"], label: "Progreso", Icon: TrendingUp },
   { href: "/settings", match: ["/settings"], label: "Ajustes", Icon: Settings },
@@ -38,7 +39,7 @@ export function AppNav({ active }: { active?: string }) {
                 }`}
               >
                 <span
-                  className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors md:h-auto md:w-auto ${
+                  className={`flex h-8 w-11 items-center justify-center rounded-full transition-colors md:h-auto md:w-auto ${
                     isActive ? "bg-brand/12 md:bg-transparent" : ""
                   }`}
                 >

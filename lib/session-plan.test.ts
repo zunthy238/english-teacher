@@ -55,3 +55,16 @@ describe("correctSentence", () => {
     expect(correctSentence(wo)).toBe(wo.answer);
   });
 });
+
+describe("repaso en la sesión", () => {
+  const lesson = MOCK_LESSONS[0];
+  const card = (id: number) => ({ id, kind: "vocab" as const, front: `w${id}`, back: "m", extra: null, fsrs: {} });
+  it("pone el repaso justo después del inicio y lo limita", () => {
+    const steps = buildSession(lesson, Array.from({ length: 12 }, (_, i) => card(i + 1)));
+    expect(steps[1].kind).toBe("review");
+    expect(steps.filter((s) => s.kind === "review")).toHaveLength(LIMITS.review);
+  });
+  it("sin tarjetas vencidas no hay bloque de repaso", () => {
+    expect(buildSession(lesson, []).some((s) => s.kind === "review")).toBe(false);
+  });
+});

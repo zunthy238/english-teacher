@@ -8,12 +8,13 @@ import { Loader2, X } from "lucide-react";
 import type { Lesson } from "@/lib/schemas/lesson";
 import type { LessonGrade } from "@/lib/grade";
 import { buildErrorExamples } from "@/lib/progress-input";
+import { buildSeedCards, type ReviewItem } from "@/lib/review-input";
 import { SessionFlow, type SaveStatus, type SessionMeta } from "./session-flow";
 
 type State =
   | { status: "loading"; slow: boolean }
   | { status: "error"; message: string; code: string }
-  | { status: "ready"; lesson: Lesson; meta: SessionMeta };
+  | { status: "ready"; lesson: Lesson; meta: SessionMeta; reviews: ReviewItem[] };
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -43,12 +44,17 @@ export function DailyLesson() {
       2500,
     );
     try {
-      const res = await fetch(`/api/lesson${newVariant ? "?new=1" : ""}`, { cache: "no-store" });
+      // Lección y repaso en paralelo; si el repaso falla, la sesión sigue sin él
+      const [res, reviewRes] = await Promise.all([
+        fetch(`/api/lesson${newVariant ? "?new=1" : ""}`, { cache: "no-store" }),
+        fetch("/api/review?limit=8", { cache: "no-store" }).catch(() => null),
+      ]);
       const body = await res.json().catch(() => ({}));
+      const reviewBody = reviewRes && reviewRes.ok ? await reviewRes.json().catch(() => ({})) : {};
       if (!res.ok) {
         setState({ status: "error", message: body.error ?? "No se pudo cargar la lección.", code: body.code ?? "unknown" });
       } else {
-        setState({ status: "ready", lesson: body.lesson, meta: body.meta });
+        setState({ status: "ready", lesson: body.lesson, meta: body.meta, reviews: reviewBody.cards ?? [] });
         setAttempt(0);
         setRun((r) => r + 1);
         startedAt.current = Date.now();
@@ -71,6 +77,15 @@ export function DailyLesson() {
   async function savePractice(grade: LessonGrade) {
     if (state.status !== "ready") return;
     setSave({ status: "saving" });
+    const errors = buildErrorExamples(state.lesson.exercises, grade.results);
+    // Lo aprendido hoy entra al repaso espaciado (solo en el primer intento)
+    if (attempt === 0) {
+      void fetch("/api/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic_key: state.meta.topic_key, cards: buildSeedCards(state.lesson, errors) }),
+      }).catch(() => undefined);
+    }
     try {
       const res = await fetch("/api/progress", {
         method: "POST",
@@ -80,7 +95,7 @@ export function DailyLesson() {
           score: grade.score,
           minutes: (Date.now() - startedAt.current) / 60000,
           first_attempt: attempt === 0,
-          errors: buildErrorExamples(state.lesson.exercises, grade.results),
+          errors,
         }),
       });
       const body = await res.json().catch(() => ({}));
@@ -127,6 +142,7 @@ export function DailyLesson() {
     <SessionFlow
       key={`${state.meta.topic_key}-${state.meta.variant}-${run}`}
       lesson={state.lesson}
+      reviews={attempt === 0 ? state.reviews : []}
       meta={state.meta}
       attempt={attempt}
       save={save}
