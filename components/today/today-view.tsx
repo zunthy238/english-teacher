@@ -1,13 +1,13 @@
 // components/today/today-view.tsx
 // Pantalla Hoy: el plan del día. Una sola acción principal: empezar la sesión.
 import Link from "next/link";
-import { ArrowRight, BookOpen, Briefcase, Compass, Flame, Layers, PenLine, Sparkles, Target } from "lucide-react";
+import { ArrowRight, BookOpen, Briefcase, Compass, Flame, Headphones, Layers, PenLine, Sparkles, Target } from "lucide-react";
 import type { TodayPlan } from "@/lib/today-plan";
 
 const RING = 2 * Math.PI * 34;
 
 const STEPS = [
-  { n: 1, label: "Aprende y escucha", desc: "Ideas clave, frases con audio y palabras nuevas", min: "7 min", color: "bg-learn text-[#2b1d00]", Icon: BookOpen },
+  { n: 1, label: "Aprende y escucha", desc: "Ideas clave, una historia con audio y palabras nuevas", min: "9 min", color: "bg-learn text-[#2b1d00]", Icon: BookOpen },
   { n: 2, label: "Practica", desc: "Un ejercicio a la vez, con respuesta al instante", min: "6 min", color: "bg-practice text-white", Icon: Target },
   { n: 3, label: "Escribe", desc: "Tus frases, corregidas por Professor Mike", min: "5 min", color: "bg-write text-white", Icon: PenLine },
 ];
@@ -16,10 +16,12 @@ export function TodayView({
   plan,
   reviewDue,
   needsPlacement = false,
+  listeningWeak = false,
 }: {
   plan: TodayPlan;
   reviewDue: number;
   needsPlacement?: boolean;
+  listeningWeak?: boolean;
 }) {
   const offset = RING * (1 - plan.goalPct / 100);
   const reviewInSession = Math.min(reviewDue, 8);
@@ -115,7 +117,7 @@ export function TodayView({
       {/* Mapa de la sesión: informativo (no son botones); la acción es "Empezar la sesión" */}
       <section className="rounded-[24px] bg-white/60 px-5 py-5 pm-rise" aria-labelledby="steps-title">
         <h2 id="steps-title" className="text-xs font-bold uppercase tracking-widest text-muted">
-          Así será tu sesión · ~18 min
+          Así será tu sesión · ~20 min
         </h2>
         <ol className="mt-4">
           {steps.map(({ n, label, desc, min, color, Icon }, idx) => (
@@ -137,7 +139,7 @@ export function TodayView({
         </ol>
         <p className="mt-4 flex items-center gap-2 border-t border-line pt-4 text-sm text-muted">
           <Sparkles className="size-4 shrink-0 text-brand" aria-hidden strokeWidth={2.2} />
-          Próximamente: escucha con historias y habla con Professor Mike.
+          Próximamente: habla con Professor Mike por voz.
         </p>
       </section>
 
@@ -151,6 +153,21 @@ export function TodayView({
           <ArrowRight className="size-5" aria-hidden />
         </Link>
       )}
+
+      {/* Historias para escuchar (Fase C) */}
+      <Link
+        href="/listen"
+        className="flex items-center gap-4 rounded-[22px] bg-listen px-5 py-4 text-white transition-transform active:scale-[0.98] pm-rise"
+      >
+        <Headphones className="size-8 shrink-0" aria-hidden strokeWidth={2} />
+        <div className="flex-1">
+          <p className="font-extrabold">Historias para escuchar</p>
+          <p className="text-sm text-white/85">
+            {listeningWeak ? "🎯 Tu refuerzo: una historia extra al día" : "Diálogos de tus temas, cuando quieras"}
+          </p>
+        </div>
+        <ArrowRight className="size-5" aria-hidden />
+      </Link>
 
       {/* Ruta profesional */}
       <section className="flex items-center gap-4 rounded-[22px] bg-[#ddf5ef] px-5 py-4 text-[#0b5148] pm-rise">

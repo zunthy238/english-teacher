@@ -1,9 +1,10 @@
 // lib/session-plan.ts
 // Convierte una lección en una SESIÓN GUIADA: una tarjeta a la vez (funciones puras, probadas).
-// Orden pedagógico: aprende (poco texto) → escucha ejemplos → vocabulario → practica → escribe → cierre.
+// Orden pedagógico: repaso → aprende (poco texto) → escucha (historia o ejemplos) → vocabulario → practica → escribe → cierre.
 import type { ClosedExercise, Example, Lesson, VocabularyItem } from "./schemas/lesson";
 import { isClosedExercise } from "./schemas/lesson";
 import type { ReviewItem } from "./review-input";
+import type { Story } from "./schemas/story";
 
 export type Block = "review" | "learn" | "listen" | "vocab" | "practice" | "write";
 
@@ -12,6 +13,10 @@ export type SessionStep =
   | { kind: "review"; card: ReviewItem; index: number; total: number }
   | { kind: "learn"; text: string; index: number; total: number }
   | { kind: "example"; example: Example; index: number; total: number }
+  | { kind: "story_listen" }
+  | { kind: "story_question"; index: number; total: number }
+  | { kind: "story_transcript" }
+  | { kind: "story_dictation"; index: number; total: number }
   | { kind: "vocab"; item: VocabularyItem; index: number; total: number }
   | { kind: "exercise"; exercise: ClosedExercise; index: number; total: number }
   | { kind: "write"; task: string }
@@ -47,6 +52,10 @@ export function blockOf(step: SessionStep): Block | null {
     case "learn":
       return "learn";
     case "example":
+    case "story_listen":
+    case "story_question":
+    case "story_transcript":
+    case "story_dictation":
       return "listen";
     case "vocab":
       return "vocab";
@@ -59,8 +68,19 @@ export function blockOf(step: SessionStep): Block | null {
   }
 }
 
-// El repaso va primero: calienta la memoria con lo que estás por olvidar
-export function buildSession(lesson: Lesson, reviews: ReviewItem[] = []): SessionStep[] {
+// Historia: escuchar sin texto → preguntas → transcripción → dictado
+export function buildStorySteps(story: Story): SessionStep[] {
+  return [
+    { kind: "story_listen" },
+    ...story.questions.map((_, i): SessionStep => ({ kind: "story_question", index: i, total: story.questions.length })),
+    { kind: "story_transcript" },
+    ...story.dictation.map((_, i): SessionStep => ({ kind: "story_dictation", index: i, total: story.dictation.length })),
+  ];
+}
+
+// El repaso va primero: calienta la memoria con lo que estás por olvidar.
+// Si hay historia del tema, reemplaza a las frases sueltas en el bloque Escucha.
+export function buildSession(lesson: Lesson, reviews: ReviewItem[] = [], story: Story | null = null): SessionStep[] {
   const learn = chunkExplanation(lesson.explanation_es);
   const examples = lesson.examples.slice(0, LIMITS.examples);
   const vocab = lesson.vocabulary.slice(0, LIMITS.vocab);
@@ -72,7 +92,8 @@ export function buildSession(lesson: Lesson, reviews: ReviewItem[] = []): Sessio
   const steps: SessionStep[] = [{ kind: "intro" }];
   due.forEach((card, i) => steps.push({ kind: "review", card, index: i + 1, total: due.length }));
   learn.forEach((text, i) => steps.push({ kind: "learn", text, index: i + 1, total: learn.length }));
-  examples.forEach((example, i) => steps.push({ kind: "example", example, index: i + 1, total: examples.length }));
+  if (story) steps.push(...buildStorySteps(story));
+  else examples.forEach((example, i) => steps.push({ kind: "example", example, index: i + 1, total: examples.length }));
   vocab.forEach((item, i) => steps.push({ kind: "vocab", item, index: i + 1, total: vocab.length }));
   closed.forEach((exercise, i) => steps.push({ kind: "exercise", exercise, index: i + 1, total: closed.length }));
   if (writing) steps.push({ kind: "write", task: writing.prompt });

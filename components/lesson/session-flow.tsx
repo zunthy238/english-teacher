@@ -10,12 +10,14 @@ import { ArrowRight, Check, RotateCcw, Sparkles, Volume2, X } from "lucide-react
 import type { ClosedExercise, Lesson } from "@/lib/schemas/lesson";
 import { gradeExercise, gradeLesson, type GradeResult, type LessonGrade } from "@/lib/grade";
 import { blockOf, buildSession, correctSentence, type Block, type SessionStep } from "@/lib/session-plan";
-import { speak, vibrate } from "./speech";
+import { speak, stopSpeech, vibrate } from "./speech";
 import { WritingExercise } from "./writing-exercise";
 import { ReportExercise } from "./report-exercise";
 import { Confetti } from "./confetti";
 import { ReviewCard } from "@/components/review/review-card";
 import type { ReviewItem } from "@/lib/review-input";
+import type { Story } from "@/lib/schemas/story";
+import { StoryDictation, StoryListen, StoryQuestion, StoryTranscript } from "@/components/listen/story-steps";
 
 export type SessionMeta = {
   topic_key: string;
@@ -139,6 +141,7 @@ function WordChips({ ex, onChange, locked }: {
 export function SessionFlow({
   lesson,
   reviews,
+  story = null,
   meta,
   attempt,
   save,
@@ -149,6 +152,7 @@ export function SessionFlow({
 }: {
   lesson: Lesson;
   reviews: ReviewItem[];
+  story?: Story | null;
   meta: SessionMeta;
   attempt: number;
   save: SaveStatus;
@@ -157,7 +161,7 @@ export function SessionFlow({
   onNextTopic: () => void;
   onNewVersion: () => void;
 }) {
-  const steps = useMemo(() => buildSession(lesson, reviews), [lesson, reviews]);
+  const steps = useMemo(() => buildSession(lesson, reviews, story), [lesson, reviews, story]);
   const [i, setI] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -184,6 +188,7 @@ export function SessionFlow({
       setGrade(g);
       onPracticeDone(g);
     }
+    stopSpeech();
     setI(n);
     setRevealed(false);
     const audio = speechFor(steps[n]);
@@ -235,7 +240,7 @@ export function SessionFlow({
                 )}
                 <ul className="mt-2 grid grid-cols-2 gap-2.5">
                   <li className="rounded-2xl bg-learn px-4 py-3 font-bold text-[#2b1d00]">{counts.learn} ideas clave</li>
-                  <li className="rounded-2xl bg-listen px-4 py-3 font-bold text-white">{counts.examples} frases para escuchar</li>
+                  <li className="rounded-2xl bg-listen px-4 py-3 font-bold text-white">{story ? "1 historia para escuchar" : `${counts.examples} frases para escuchar`}</li>
                   <li className="rounded-2xl bg-review px-4 py-3 font-bold text-white">{counts.vocab} palabras nuevas</li>
                   <li className="rounded-2xl bg-practice px-4 py-3 font-bold text-white">{counts.exercises} ejercicios</li>
                 </ul>
@@ -302,6 +307,18 @@ export function SessionFlow({
                 </button>
               </div>
             </div>
+          )}
+
+          {/* ESCUCHA · HISTORIA (Fase C) */}
+          {story && step.kind === "story_listen" && <StoryListen story={story} onNext={goNext} />}
+          {story && step.kind === "story_question" && (
+            <StoryQuestion key={step.index} story={story} index={step.index} onNext={goNext} />
+          )}
+          {story && step.kind === "story_transcript" && (
+            <StoryTranscript story={story} topicKey={meta.topic_key} onNext={goNext} />
+          )}
+          {story && step.kind === "story_dictation" && (
+            <StoryDictation key={step.index} story={story} index={step.index} onNext={goNext} />
           )}
 
           {/* VOCABULARIO: tarjeta que se voltea */}

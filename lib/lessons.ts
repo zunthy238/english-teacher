@@ -239,6 +239,7 @@ export async function getDailyLesson(userId: string, opts: { newVariant: boolean
       .eq("cache_key", topic.topic_key)
       .eq("kind", "lesson")
       .eq("variant", variant)
+      .eq("prompt_version", PROMPT_VERSION)
       .maybeSingle();
     if (!existing) throw new LessonError("No se pudo guardar la lección.", 500, "db");
     await markSeen(userId, existing.id);

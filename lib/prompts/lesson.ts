@@ -26,6 +26,9 @@ Estructura obligatoria:
   en el idioma que corresponde al nivel ${i.level}. Incluye: la regla o el uso con ejemplos cortos, las formas
   (afirmativa, negativa y pregunta si aplica), los errores típicos de hispanohablantes con este tema y una nota
   de pronunciación americana cuando sea útil. Usa saltos de línea para separar las partes.
+- Inglés NATURAL como lo hablan en EE. UU.: usa contracciones por defecto en ejemplos, ejercicios y respuestas
+  (I'm, you're, he's, don't, doesn't, isn't, can't, won't, I'll, I've, let's). En la explicación enseña ambas formas
+  y aclara que la forma completa se usa en escritura formal o para dar énfasis.
 - examples: exactamente 6, situaciones reales en EE. UU. "es" = traducción al español${translate ? "" : " → en este nivel pon null"}.
 - vocabulary: exactamente 8 palabras o expresiones distintas, con meaning_es y una oración de ejemplo.
 - exercises: exactamente 8, en este orden: 6 cerrados, luego 1 "writing" y 1 "speaking".

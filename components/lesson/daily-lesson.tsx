@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, X } from "lucide-react";
 import type { Lesson } from "@/lib/schemas/lesson";
+import type { Story } from "@/lib/schemas/story";
 import type { LessonGrade } from "@/lib/grade";
 import { buildErrorExamples } from "@/lib/progress-input";
 import { buildSeedCards, type ReviewItem } from "@/lib/review-input";
@@ -14,7 +15,7 @@ import { SessionFlow, type SaveStatus, type SessionMeta } from "./session-flow";
 type State =
   | { status: "loading"; slow: boolean }
   | { status: "error"; message: string; code: string }
-  | { status: "ready"; lesson: Lesson; meta: SessionMeta; reviews: ReviewItem[] };
+  | { status: "ready"; lesson: Lesson; meta: SessionMeta; reviews: ReviewItem[]; story: Story | null };
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -54,7 +55,15 @@ export function DailyLesson() {
       if (!res.ok) {
         setState({ status: "error", message: body.error ?? "No se pudo cargar la lección.", code: body.code ?? "unknown" });
       } else {
-        setState({ status: "ready", lesson: body.lesson, meta: body.meta, reviews: reviewBody.cards ?? [] });
+        // Historia del tema para el bloque Escucha. Si falla o tarda, la sesión sigue con las frases de la lección.
+        const story = await fetch(`/api/story?topic=${encodeURIComponent(body.meta.topic_key)}`, {
+          cache: "no-store",
+          signal: AbortSignal.timeout(45_000),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((b) => (b?.story as Story | undefined) ?? null)
+          .catch(() => null);
+        setState({ status: "ready", lesson: body.lesson, meta: body.meta, reviews: reviewBody.cards ?? [], story });
         setAttempt(0);
         setRun((r) => r + 1);
         startedAt.current = Date.now();
@@ -112,7 +121,7 @@ export function DailyLesson() {
         <p className="font-display text-2xl font-extrabold">
           {state.slow ? "Professor Mike está preparando tu sesión…" : "Cargando tu sesión…"}
         </p>
-        {state.slow && <p className="text-muted">La primera vez de cada tema tarda entre 10 y 30 segundos.</p>}
+        {state.slow && <p className="text-muted">La primera vez de cada tema se crean la lección y su historia: tarda entre 20 y 45 segundos.</p>}
       </Shell>
     );
   }
@@ -143,6 +152,7 @@ export function DailyLesson() {
       key={`${state.meta.topic_key}-${state.meta.variant}-${run}`}
       lesson={state.lesson}
       reviews={attempt === 0 ? state.reviews : []}
+      story={state.story}
       meta={state.meta}
       attempt={attempt}
       save={save}

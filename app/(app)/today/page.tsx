@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buildSummary } from "@/lib/progress-summary";
 import { buildTodayPlan } from "@/lib/today-plan";
+import { listeningIsWeak } from "@/lib/listen-library";
 import { TodaySkeleton, TodayView } from "@/components/today/today-view";
 import type { CefrLevel } from "@/lib/schemas/lesson";
 
@@ -23,11 +24,12 @@ async function TodayData() {
   const level = (profile?.cefr_level ?? "A1") as CefrLevel;
   const since = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [topics, progress, sessions, reviewDue] = await Promise.all([
+  const [topics, progress, sessions, reviewDue, placement] = await Promise.all([
     supabase.from("curriculum").select("topic_key, title, position").eq("cefr_level", level),
     supabase.from("user_topic_progress").select("topic_key").eq("completed", true),
     supabase.from("sessions").select("created_at, minutes").gte("created_at", since),
     supabase.from("review_cards").select("*", { count: "exact", head: true }).lte("due_at", new Date().toISOString()),
+    supabase.from("placement_tests").select("skills").order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
   const now = new Date();
@@ -57,7 +59,12 @@ async function TodayData() {
     completed: completedKeys,
   });
 
-  return <TodayView plan={plan} reviewDue={reviewDue.count ?? 0} needsPlacement={needsPlacement} />;
+  return <TodayView
+      plan={plan}
+      reviewDue={reviewDue.count ?? 0}
+      needsPlacement={needsPlacement}
+      listeningWeak={listeningIsWeak(placement.data?.skills as Record<string, { pct?: number }> | undefined)}
+    />;
 }
 
 export default function TodayPage() {
