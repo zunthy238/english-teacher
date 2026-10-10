@@ -112,6 +112,14 @@ try {
   check("review_cards: B NO ve las tarjetas de A", !bCards.error && bCards.data?.length === 0, bCards.error?.message);
   await A.client.from("review_cards").delete().eq("front", "rls_test_card");
 
+  // 10. Pruebas de nivel: privadas y sin suplantación (no se inserta nada real: el historial no se puede borrar)
+  const bPlace = await B.client.from("placement_tests").select("id").eq("user_id", A.id);
+  check("placement_tests: B NO ve las pruebas de A", !bPlace.error && bPlace.data?.length === 0, bPlace.error?.message);
+  const bPlaceIns = await B.client
+    .from("placement_tests")
+    .insert({ user_id: A.id, level: "C1", start_level: "C1", theta: 3, skills: {}, answers: [] });
+  check("placement_tests: B NO puede crear una prueba a nombre de A", Boolean(bPlaceIns.error), "el insert fue aceptado");
+
   // Limpieza: A borra su dato de prueba
   await A.client.from("errors").delete().eq("error_type", TEST_TYPE);
 } catch (e) {

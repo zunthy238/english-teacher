@@ -1,7 +1,7 @@
 // components/today/today-view.tsx
 // Pantalla Hoy: el plan del día. Una sola acción principal: empezar la sesión.
 import Link from "next/link";
-import { ArrowRight, BookOpen, Briefcase, Flame, Layers, PenLine, Sparkles, Target } from "lucide-react";
+import { ArrowRight, BookOpen, Briefcase, Compass, Flame, Layers, PenLine, Sparkles, Target } from "lucide-react";
 import type { TodayPlan } from "@/lib/today-plan";
 
 const RING = 2 * Math.PI * 34;
@@ -12,7 +12,15 @@ const STEPS = [
   { n: 3, label: "Escribe", desc: "Tus frases, corregidas por Professor Mike", min: "5 min", color: "bg-write text-white", Icon: PenLine },
 ];
 
-export function TodayView({ plan, reviewDue }: { plan: TodayPlan; reviewDue: number }) {
+export function TodayView({
+  plan,
+  reviewDue,
+  needsPlacement = false,
+}: {
+  plan: TodayPlan;
+  reviewDue: number;
+  needsPlacement?: boolean;
+}) {
   const offset = RING * (1 - plan.goalPct / 100);
   const reviewInSession = Math.min(reviewDue, 8);
   const steps = [
@@ -42,6 +50,20 @@ export function TodayView({ plan, reviewDue }: { plan: TodayPlan; reviewDue: num
           {plan.streak} {plan.streak === 1 ? "día" : "días"}
         </div>
       </header>
+
+      {needsPlacement && (
+        <Link
+          href="/placement"
+          className="flex items-center gap-4 rounded-[22px] bg-learn px-5 py-4 text-ink transition-transform active:scale-[0.98] pm-rise"
+        >
+          <Compass className="size-9 shrink-0" aria-hidden strokeWidth={2} />
+          <div className="flex-1">
+            <p className="font-extrabold">Descubre tu nivel real</p>
+            <p className="text-sm">Prueba de 6 min para empezar en el punto justo</p>
+          </div>
+          <ArrowRight className="size-5" aria-hidden strokeWidth={2.6} />
+        </Link>
+      )}
 
       {/* Tarjeta principal: meta del día + tema + acción */}
       <section className="space-y-5 rounded-[28px] bg-ink p-6 text-white pm-rise" aria-labelledby="today-title">

@@ -3,6 +3,7 @@ import { LogOut } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { ApiKeysPanel } from "@/components/settings/api-keys-panel";
 import { GoalPicker } from "@/components/settings/goal-picker";
+import { PlacementCard } from "@/components/settings/placement-card";
 
 export default function SettingsPage() {
   return (
@@ -11,6 +12,8 @@ export default function SettingsPage() {
         <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Ajustes</p>
         <h1 className="text-2xl font-semibold md:text-3xl">Configuración</h1>
       </header>
+
+      <PlacementCard />
 
       <GoalPicker />
 

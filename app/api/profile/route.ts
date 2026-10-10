@@ -1,5 +1,5 @@
 // app/api/profile/route.ts
-// GET: meta diaria actual · PATCH: cambiar la meta diaria. Con la sesión del usuario (RLS).
+// GET: meta diaria, nivel y fecha de la última prueba de nivel · PATCH: cambiar la meta diaria. Con la sesión del usuario (RLS).
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseGoalInput } from "@/lib/goal";
@@ -17,8 +17,12 @@ async function requireUser() {
 export async function GET() {
   const { supabase, userId } = await requireUser();
   if (!userId) return json({ error: "Inicia sesión para continuar." }, 401);
-  const { data } = await supabase.from("profile").select("daily_minutes, cefr_level").eq("id", userId).maybeSingle();
-  return json({ daily_minutes: data?.daily_minutes ?? 30, cefr_level: data?.cefr_level ?? "A1" });
+  const { data } = await supabase.from("profile").select("daily_minutes, cefr_level, placement_at").eq("id", userId).maybeSingle();
+  return json({
+    daily_minutes: data?.daily_minutes ?? 30,
+    cefr_level: data?.cefr_level ?? "A1",
+    placement_at: data?.placement_at ?? null,
+  });
 }
 
 export async function PATCH(request: Request) {

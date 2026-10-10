@@ -2,6 +2,7 @@
 // Hoy = el plan del día (Fase A). La lección vive ahora en /lesson.
 // Lee con la sesión del usuario (RLS) y no llama a la IA: abrir Hoy es gratis.
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buildSummary } from "@/lib/progress-summary";
 import { buildTodayPlan } from "@/lib/today-plan";
@@ -16,7 +17,7 @@ async function TodayData() {
 
   const { data: profile } = await supabase
     .from("profile")
-    .select("cefr_level, daily_minutes")
+    .select("cefr_level, daily_minutes, placement_at")
     .eq("id", userId)
     .maybeSingle();
   const level = (profile?.cefr_level ?? "A1") as CefrLevel;
@@ -31,6 +32,11 @@ async function TodayData() {
 
   const now = new Date();
   const sessionRows = sessions.data ?? [];
+  const completedKeys = (progress.data ?? []).map((r) => r.topic_key);
+
+  // Usuario nuevo (sin prueba ni actividad): primero la prueba de nivel. Los demás la ven como invitación.
+  const needsPlacement = !profile?.placement_at;
+  if (needsPlacement && sessionRows.length === 0 && completedKeys.length === 0) redirect("/placement");
   const summary = buildSummary({
     now,
     cefr_level: level,
@@ -48,10 +54,10 @@ async function TodayData() {
     streak: summary.streak_days,
     sessions: sessionRows,
     topics: topics.data ?? [],
-    completed: (progress.data ?? []).map((r) => r.topic_key),
+    completed: completedKeys,
   });
 
-  return <TodayView plan={plan} reviewDue={reviewDue.count ?? 0} />;
+  return <TodayView plan={plan} reviewDue={reviewDue.count ?? 0} needsPlacement={needsPlacement} />;
 }
 
 export default function TodayPage() {
