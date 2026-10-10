@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
+/* Fase A: el modo oscuro queda desactivado hasta diseñarlo bien (las clases dark: solo aplican con .dark) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Identidad visual de Professor Mike */
+@theme {
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+
+  --color-canvas: #eef0fa; /* fondo general: lila muy suave, no blanco plano */
+  --color-ink: #15173a; /* texto principal y tarjetas oscuras */
+  --color-ink-soft: #24275a;
+  --color-muted: #5b5f86; /* texto secundario (contraste AA sobre canvas) */
+  --color-line: #d9dcf0;
+  --color-brand: #6d4aff; /* violeta: acciones principales */
+  --color-brand-soft: #8b7cff;
+
+  /* Un color por bloque de la sesión */
+  --color-review: #6d4aff;
+  --color-listen: #0777b5;
+  --color-learn: #ffc93c;
+  --color-practice: #4f46e5;
+  --color-speak: #d93a40;
+  --color-write: #0f8c7e;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes pm-rise {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes pm-pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  70% { transform: scale(1.06); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.pm-rise { animation: pm-rise 0.35s ease-out both; }
+.pm-pop { animation: pm-pop 0.4s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-rise, .pm-pop { animation: none; }
 }
