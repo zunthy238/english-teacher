@@ -7,8 +7,8 @@ import type { TodayPlan } from "@/lib/today-plan";
 const RING = 2 * Math.PI * 34;
 
 const STEPS = [
-  { n: 1, label: "Aprende", desc: "El tema explicado con ejemplos y audio", min: "5 min", color: "bg-learn text-[#2b1d00]", Icon: BookOpen },
-  { n: 2, label: "Practica", desc: "6 ejercicios con calificación al instante", min: "8 min", color: "bg-practice text-white", Icon: Target },
+  { n: 1, label: "Aprende y escucha", desc: "Ideas clave, frases con audio y palabras nuevas", min: "7 min", color: "bg-learn text-[#2b1d00]", Icon: BookOpen },
+  { n: 2, label: "Practica", desc: "Un ejercicio a la vez, con respuesta al instante", min: "6 min", color: "bg-practice text-white", Icon: Target },
   { n: 3, label: "Escribe", desc: "Tus frases, corregidas por Professor Mike", min: "5 min", color: "bg-write text-white", Icon: PenLine },
 ];
 
@@ -83,34 +83,33 @@ export function TodayView({ plan }: { plan: TodayPlan }) {
         </Link>
       </section>
 
-      {/* Lo que harás hoy */}
-      <section className="space-y-3 pm-rise" aria-labelledby="steps-title">
+      {/* Mapa de la sesión: informativo (no son botones); la acción es "Empezar la sesión" */}
+      <section className="rounded-[24px] bg-white/60 px-5 py-5 pm-rise" aria-labelledby="steps-title">
         <h2 id="steps-title" className="text-xs font-bold uppercase tracking-widest text-muted">
-          Lo que harás hoy · ~18 min
+          Así será tu sesión · ~18 min
         </h2>
-        <ol className="space-y-2.5">
-          {STEPS.map(({ n, label, desc, min, color, Icon }) => (
-            <li key={n} className="flex items-center gap-3.5 rounded-2xl bg-white px-4 py-3.5">
-              <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${color}`}>
+        <ol className="mt-4">
+          {STEPS.map(({ n, label, desc, min, color, Icon }, idx) => (
+            <li key={n} className="relative flex gap-4 pb-5 last:pb-0">
+              {idx < STEPS.length - 1 && (
+                <span className="absolute left-5 top-11 h-[calc(100%-36px)] w-0.5 bg-line" aria-hidden />
+              )}
+              <span className={`relative flex size-10 shrink-0 items-center justify-center rounded-full ${color}`}>
                 <Icon className="size-5" aria-hidden strokeWidth={2.2} />
               </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-bold">{label}</p>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <p className="font-bold">
+                  {label} <span className="font-semibold text-muted">· {min}</span>
+                </p>
                 <p className="text-sm text-muted">{desc}</p>
               </div>
-              <span className="text-sm font-semibold text-muted">{min}</span>
             </li>
           ))}
-          <li className="flex items-center gap-3.5 rounded-2xl border-2 border-dashed border-line px-4 py-3.5">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand">
-              <Sparkles className="size-5" aria-hidden strokeWidth={2.2} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-bold text-muted">Repaso, escucha y habla</p>
-              <p className="text-sm text-muted">Llegan en las próximas fases</p>
-            </div>
-          </li>
         </ol>
+        <p className="mt-4 flex items-center gap-2 border-t border-line pt-4 text-sm text-muted">
+          <Sparkles className="size-4 shrink-0 text-brand" aria-hidden strokeWidth={2.2} />
+          Próximamente: repaso inteligente, escucha y habla.
+        </p>
       </section>
 
       {/* Ruta profesional */}
