@@ -18,7 +18,7 @@ async function TodayData() {
 
   const { data: profile } = await supabase
     .from("profile")
-    .select("cefr_level, daily_minutes, placement_at")
+    .select("cefr_level, daily_minutes, placement_at, goals, job_title")
     .eq("id", userId)
     .maybeSingle();
   const level = (profile?.cefr_level ?? "A1") as CefrLevel;
@@ -63,6 +63,8 @@ async function TodayData() {
       plan={plan}
       reviewDue={reviewDue.count ?? 0}
       needsPlacement={needsPlacement}
+      goals={profile?.goals ?? ["daily"]}
+      jobTitle={profile?.job_title ?? null}
       listeningWeak={listeningIsWeak(placement.data?.skills as Record<string, { pct?: number }> | undefined)}
     />;
 }

@@ -4,6 +4,7 @@ import { logout } from "@/app/login/actions";
 import { ApiKeysPanel } from "@/components/settings/api-keys-panel";
 import { GoalPicker } from "@/components/settings/goal-picker";
 import { PlacementCard } from "@/components/settings/placement-card";
+import { PurposePicker } from "@/components/settings/purpose-picker";
 
 export default function SettingsPage() {
   return (
@@ -14,6 +15,8 @@ export default function SettingsPage() {
       </header>
 
       <PlacementCard />
+
+      <PurposePicker />
 
       <GoalPicker />
 

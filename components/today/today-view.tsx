@@ -1,7 +1,7 @@
 // components/today/today-view.tsx
 // Pantalla Hoy: el plan del día. Una sola acción principal: empezar la sesión.
 import Link from "next/link";
-import { ArrowRight, BookOpen, Briefcase, Compass, Flame, Headphones, Layers, PenLine, Sparkles, Target } from "lucide-react";
+import { ArrowRight, BookOpen, Compass, Flame, Headphones, Layers, PenLine, Target } from "lucide-react";
 import type { TodayPlan } from "@/lib/today-plan";
 
 const RING = 2 * Math.PI * 34;
@@ -17,12 +17,24 @@ export function TodayView({
   reviewDue,
   needsPlacement = false,
   listeningWeak = false,
+  goals = ["daily"],
+  jobTitle = null,
 }: {
   plan: TodayPlan;
   reviewDue: number;
   needsPlacement?: boolean;
   listeningWeak?: boolean;
+  goals?: string[];
+  jobTitle?: string | null;
 }) {
+  // Tarjeta de Hablar según para qué quiere el inglés (nadie ve escenarios que no eligió)
+  const purpose = goals.includes("work")
+    ? { emoji: "💼", title: "Inglés para tu trabajo", desc: jobTitle ? `Entrevista y reuniones como ${jobTitle}` : "Entrevistas, reuniones y clientes por voz" }
+    : goals.includes("travel")
+      ? { emoji: "✈️", title: "Inglés para viajar", desc: "Aeropuerto, hotel y restaurante por voz" }
+      : goals.includes("study")
+        ? { emoji: "🎓", title: "Inglés para estudiar", desc: "Presentaciones y preguntas tipo TOEFL por voz" }
+        : { emoji: "🗣️", title: "Conversa con Mike", desc: "Situaciones del día a día, por voz" };
   const offset = RING * (1 - plan.goalPct / 100);
   const reviewInSession = Math.min(reviewDue, 8);
   const steps = [
@@ -137,10 +149,6 @@ export function TodayView({
             </li>
           ))}
         </ol>
-        <p className="mt-4 flex items-center gap-2 border-t border-line pt-4 text-sm text-muted">
-          <Sparkles className="size-4 shrink-0 text-brand" aria-hidden strokeWidth={2.2} />
-          Próximamente: habla con Professor Mike por voz.
-        </p>
       </section>
 
       {reviewDue > 8 && (
@@ -169,14 +177,18 @@ export function TodayView({
         <ArrowRight className="size-5" aria-hidden />
       </Link>
 
-      {/* Ruta profesional */}
-      <section className="flex items-center gap-4 rounded-[22px] bg-[#ddf5ef] px-5 py-4 text-[#0b5148] pm-rise">
-        <Briefcase className="size-8 shrink-0" aria-hidden strokeWidth={2} />
-        <div>
-          <p className="font-extrabold">Inglés para tu trabajo</p>
-          <p className="text-sm">Reuniones, correos y entrevistas de desarrollador · próximamente</p>
+      {/* Hablar: según el propósito de cada persona */}
+      <Link
+        href="/practice"
+        className="flex items-center gap-4 rounded-[22px] bg-speak px-5 py-4 text-white transition-transform active:scale-[0.98] pm-rise"
+      >
+        <span className="text-3xl" aria-hidden>{purpose.emoji}</span>
+        <div className="flex-1">
+          <p className="font-extrabold">{purpose.title}</p>
+          <p className="text-sm text-white/85">{purpose.desc}</p>
         </div>
-      </section>
+        <ArrowRight className="size-5" aria-hidden />
+      </Link>
     </div>
   );
 }
