@@ -13,6 +13,7 @@ import { blockOf, buildSession, correctSentence, type Block, type SessionStep } 
 import { speak, vibrate } from "./speech";
 import { WritingExercise } from "./writing-exercise";
 import { ReportExercise } from "./report-exercise";
+import { Confetti } from "./confetti";
 import { ReviewCard } from "@/components/review/review-card";
 import type { ReviewItem } from "@/lib/review-input";
 
@@ -25,10 +26,12 @@ export type SessionMeta = {
   source: "cache" | "ai";
 };
 
+export type GoalInfo = { todayMinutes: number; goal: number; reached: boolean; justReached: boolean };
+
 export type SaveStatus =
   | { status: "idle" }
   | { status: "saving" }
-  | { status: "saved"; completed: boolean }
+  | { status: "saved"; completed: boolean; goal?: GoalInfo }
   | { status: "error" };
 
 const THEME: Record<Block, { card: string; label: string; tag: string; bar: string }> = {
@@ -436,8 +439,11 @@ export function SessionFlow({
           {step.kind === "done" && (() => {
             const completed = save.status === "saved" && save.completed;
             const score = grade?.score ?? 0;
+            const goal = save.status === "saved" ? save.goal : undefined;
+            const pct = goal ? Math.min(100, Math.round((goal.todayMinutes / goal.goal) * 100)) : 0;
             return (
               <div className="-mx-5 -mb-4 -mt-3 flex flex-1 flex-col gap-5 bg-ink px-6 pb-6 pt-10 text-white">
+                {goal?.justReached && <Confetti />}
                 <div className="flex flex-col items-center gap-3 text-center pm-pop">
                   <span className={`flex size-24 items-center justify-center rounded-full ${completed ? "bg-[#4ade80]" : "bg-brand-soft"}`}>
                     {completed ? (
@@ -463,6 +469,21 @@ export function SessionFlow({
                     <p className="text-xs text-[#b9bce6]">respuestas correctas</p>
                   </div>
                 </div>
+                {goal && (
+                  <div className={`rounded-2xl px-5 py-4 ${goal.reached ? "bg-[#ffc93c] text-ink" : "bg-ink-soft"}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-display text-lg font-extrabold">
+                        {goal.justReached ? "🔥 ¡Meta del día cumplida!" : goal.reached ? "✅ Meta de hoy cumplida" : "Meta de hoy"}
+                      </p>
+                      <p className="text-sm font-bold">
+                        {goal.todayMinutes} de {goal.goal} min
+                      </p>
+                    </div>
+                    <div className={`mt-3 h-2.5 overflow-hidden rounded-full ${goal.reached ? "bg-ink/15" : "bg-white/15"}`}>
+                      <div className={`h-full rounded-full ${goal.reached ? "bg-ink" : "bg-[#ffc93c]"}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                )}
                 <div className="rounded-2xl bg-[#ddf5ef] px-5 py-4 text-[#0b5148]">
                   <p className="text-xs font-extrabold uppercase tracking-widest">{completed ? "Nuevo · Ya puedo" : "Hoy practicaste"}</p>
                   <p className="mt-1 text-lg font-bold">{lesson.title}</p>

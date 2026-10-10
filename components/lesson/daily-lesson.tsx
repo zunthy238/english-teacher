@@ -99,7 +99,7 @@ export function DailyLesson() {
         }),
       });
       const body = await res.json().catch(() => ({}));
-      setSave(res.ok ? { status: "saved", completed: body.completed === true } : { status: "error" });
+      setSave(res.ok ? { status: "saved", completed: body.completed === true, goal: body.goal } : { status: "error" });
     } catch {
       setSave({ status: "error" });
     }
