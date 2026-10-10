@@ -12,6 +12,7 @@ import { gradeExercise, gradeLesson, type GradeResult, type LessonGrade } from "
 import { blockOf, buildSession, correctSentence, type Block, type SessionStep } from "@/lib/session-plan";
 import { speak, vibrate } from "./speech";
 import { WritingExercise } from "./writing-exercise";
+import { ReportExercise } from "./report-exercise";
 
 export type SessionMeta = {
   topic_key: string;
@@ -391,6 +392,7 @@ export function SessionFlow({
                     <button type="button" className={primaryBtn} onClick={goNext}>
                       Continuar <ArrowRight className="size-5" aria-hidden strokeWidth={2.6} />
                     </button>
+                    <ReportExercise exercise={ex} userAnswer={value} topicKey={meta.topic_key} variant={meta.variant} />
                   </div>
                 )}
               </div>
