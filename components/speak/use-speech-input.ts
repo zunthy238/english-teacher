@@ -34,9 +34,13 @@ function canRecord() {
 export type MicMode = "browser" | "cloud" | "none";
 export type MicState = "idle" | "listening" | "processing";
 
-const START_TIMEOUT = 4000; // si no arranca en 4 s, se considera colgado
-const SILENCE_TIMEOUT = 9000; // si no oye nada en 9 s, se corta
+// Tiempos generosos: la 1ª vez el iPhone muestra el permiso del micrófono y el usuario tarda en aceptarlo.
+const START_TIMEOUT = 12000; // si no arranca en 12 s, se considera colgado
+const SILENCE_TIMEOUT = 12000; // si no oye nada en 12 s, se corta
+const MAX_LISTEN_MS = 15000; // límite DURO: pase lo que pase, a los 15 s se entrega lo que haya
+const FORCE_END_MS = 1500; // si iOS no confirma el final tras detener, se fuerza
 const MAX_CLOUD_MS = 30000;
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export function useSpeechInput() {
   const [mode, setMode] = useState<MicMode>("browser");
@@ -51,13 +55,14 @@ export function useSpeechInput() {
     return () => stopRef.current();
   }, []);
 
+  // Si el reconocimiento del navegador falla, se cambia de inmediato al modo grabar (plan B) para no bloquear al usuario
   const failed = useCallback(() => {
     fails.current += 1;
-    if (fails.current >= 2 && canRecord()) {
+    if (canRecord()) {
       setMode("cloud");
-      setError("El micrófono del navegador no respondió. Cambié al modo grabar: toca para empezar y toca otra vez para terminar.");
+      setError("El micrófono del navegador no respondió. Cambié al modo grabar: toca el micrófono, habla y tócalo otra vez para terminar.");
     } else {
-      setError("No te pude escuchar. Toca el micrófono e intenta de nuevo.");
+      setError("No te pude escuchar. Revisa: Ajustes del iPhone → General → Teclado → Activar dictado. También puedes escribir.");
     }
   }, []);
 
@@ -76,11 +81,22 @@ export function useSpeechInput() {
         let started = false;
         let heard = false;
         let done = false;
+        const collected = () => `${finalText} ${lastInterim}`.trim() || null;
+        // Detener con red de seguridad: si iOS no avisa que terminó, se termina igual con lo que se oyó
+        const forceStop = () => {
+          try { rec.stop(); } catch {}
+          setTimeout(() => {
+            if (done) return;
+            try { rec.abort(); } catch {}
+            finish(collected());
+          }, FORCE_END_MS);
+        };
         const finish = (text: string | null, failure = false) => {
           if (done) return;
           done = true;
           clearTimeout(startTimer);
           clearTimeout(silenceTimer);
+          clearTimeout(hardTimer);
           setState("idle");
           setInterim("");
           if (failure) failed();
@@ -93,6 +109,7 @@ export function useSpeechInput() {
             finish(null, true);
           }
         }, START_TIMEOUT);
+        const hardTimer = setTimeout(forceStop, MAX_LISTEN_MS);
         const silenceTimer = setTimeout(() => {
           if (!heard) {
             try { rec.abort(); } catch {}
@@ -117,18 +134,19 @@ export function useSpeechInput() {
           setInterim(`${finalText} ${text}`.trim());
         };
         rec.onerror = (e) => {
-          if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+          if (e.error === "not-allowed") {
             setError("Permite el micrófono: Ajustes del iPhone → Safari → Micrófono → Permitir. Luego vuelve a intentar.");
             finish(null);
+          } else if (e.error === "service-not-allowed") {
+            // En iPhone suele significar que el Dictado está apagado: se pasa al modo grabar
+            finish(null, true);
           } else if (e.error === "no-speech" || e.error === "aborted") {
             if (e.error === "no-speech") setError("No te escuché. Toca el micrófono y habla de nuevo.");
             finish(null);
           } else finish(null, true);
         };
-        rec.onend = () => finish(`${finalText} ${lastInterim}`.trim() || null);
-        stopRef.current = () => {
-          try { rec.stop(); } catch {}
-        };
+        rec.onend = () => finish(collected());
+        stopRef.current = forceStop;
         setError(null);
         setState("listening");
         try {
@@ -190,7 +208,10 @@ export function useSpeechInput() {
 
   // Escuchar una respuesta. Se llama desde un toque del usuario.
   const listen = useCallback(async () => {
-    stopSpeech(); // nunca escuchar mientras Mike habla
+    // Nunca escuchar mientras suena una voz: en iPhone eso puede bloquear el micrófono
+    const speaking = typeof window !== "undefined" && window.speechSynthesis?.speaking;
+    stopSpeech();
+    if (speaking) await wait(300);
     if (mode === "browser") return listenBrowser();
     if (mode === "cloud") return listenCloud();
     return null;

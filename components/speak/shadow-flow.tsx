@@ -124,8 +124,17 @@ export function ShadowFlow({ lines, onExit, onTalk }: { lines: ShadowLine[]; onE
                 {i + 1 === lines.length ? "Terminar" : "Siguiente frase"} <ArrowRight className="size-5" aria-hidden />
               </button>
             )}
-            {!result && mic.mode === "none" && (
-              <button type="button" className={`${btn} bg-ink text-white`} onClick={next}>Siguiente</button>
+            {!result && (
+              <button
+                type="button"
+                onClick={() => {
+                  mic.stop();
+                  next();
+                }}
+                className="mx-auto px-4 py-1 text-sm font-bold text-muted underline-offset-4 hover:underline"
+              >
+                {i + 1 === lines.length ? "Saltar y terminar" : "Saltar esta frase"}
+              </button>
             )}
           </div>
         )}
