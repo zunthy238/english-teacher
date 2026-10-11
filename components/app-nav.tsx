@@ -4,14 +4,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Layers, Mic, TrendingUp, Settings } from "lucide-react";
+import { Home, Layers, MessageCircle, Mic, TrendingUp, Settings } from "lucide-react";
 
+// En celular caben 5: Ajustes se abre desde el ícono ⚙️ de Hoy (en tableta/computador sigue en el menú)
 const ITEMS = [
-  { href: "/today", match: ["/today", "/lesson"], label: "Hoy", Icon: Home },
-  { href: "/review", match: ["/review"], label: "Repaso", Icon: Layers },
-  { href: "/practice", match: ["/practice"], label: "Hablar", Icon: Mic },
-  { href: "/progress", match: ["/progress"], label: "Progreso", Icon: TrendingUp },
-  { href: "/settings", match: ["/settings"], label: "Ajustes", Icon: Settings },
+  { href: "/today", match: ["/today", "/lesson"], label: "Hoy", Icon: Home, mobile: true },
+  { href: "/mike", match: ["/mike"], label: "Mike", Icon: MessageCircle, mobile: true },
+  { href: "/review", match: ["/review"], label: "Repaso", Icon: Layers, mobile: true },
+  { href: "/practice", match: ["/practice"], label: "Hablar", Icon: Mic, mobile: true },
+  { href: "/progress", match: ["/progress"], label: "Progreso", Icon: TrendingUp, mobile: true },
+  { href: "/settings", match: ["/settings"], label: "Ajustes", Icon: Settings, mobile: false },
 ] as const;
 
 export function AppNav({ active }: { active?: string }) {
@@ -25,10 +27,10 @@ export function AppNav({ active }: { active?: string }) {
         <p className="text-sm text-[#b9bce6]">English A1 → C1</p>
       </div>
       <ul className="flex h-16 items-stretch justify-around md:h-auto md:flex-col md:gap-1 md:px-3">
-        {ITEMS.map(({ href, match, label, Icon }) => {
+        {ITEMS.map(({ href, match, label, Icon, mobile }) => {
           const isActive = active ? match.some((m) => active.startsWith(m)) : false;
           return (
-            <li key={href} className="flex-1 md:flex-none">
+            <li key={href} className={`flex-1 md:flex-none ${mobile ? "" : "hidden md:block"}`}>
               <Link
                 href={href}
                 aria-current={isActive ? "page" : undefined}

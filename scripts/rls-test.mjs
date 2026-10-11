@@ -120,6 +120,16 @@ try {
     .insert({ user_id: A.id, level: "C1", start_level: "C1", theta: 3, skills: {}, answers: [] });
   check("placement_tests: B NO puede crear una prueba a nombre de A", Boolean(bPlaceIns.error), "el insert fue aceptado");
 
+  // 11. Conversaciones con Mike: privadas
+  const chatIns = await A.client
+    .from("chat_state")
+    .upsert({ user_id: A.id, topic_key: "A1_rls_test", variant: 1, state: { v: 1 } }, { onConflict: "user_id,topic_key,variant" })
+    .select("topic_key");
+  check("chat_state: A puede guardar su conversación", !chatIns.error && chatIns.data?.length === 1, chatIns.error?.message);
+  const bChat = await B.client.from("chat_state").select("topic_key").eq("user_id", A.id);
+  check("chat_state: B NO ve las conversaciones de A", !bChat.error && bChat.data?.length === 0, bChat.error?.message);
+  await A.client.from("chat_state").delete().eq("topic_key", "A1_rls_test");
+
   // Limpieza: A borra su dato de prueba
   await A.client.from("errors").delete().eq("error_type", TEST_TYPE);
 } catch (e) {

@@ -1,7 +1,7 @@
 // components/today/today-view.tsx
 // Pantalla Hoy: el plan del día. Una sola acción principal: empezar la sesión.
 import Link from "next/link";
-import { ArrowRight, BookOpen, Compass, Flame, Headphones, Layers, PenLine, Target } from "lucide-react";
+import { ArrowRight, BookOpen, Compass, Flame, Headphones, Layers, PenLine, Settings, Target } from "lucide-react";
 import type { TodayPlan } from "@/lib/today-plan";
 
 const RING = 2 * Math.PI * 34;
@@ -56,12 +56,17 @@ export function TodayView({
           <p className="text-sm font-semibold text-muted">{plan.dateLabel}</p>
           <h1 className="mt-0.5 font-display text-3xl font-extrabold tracking-tight md:text-4xl">{plan.greeting}</h1>
         </div>
-        <div
-          className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#ffe8d6] px-3 py-2 text-[15px] font-bold text-[#9a3412]"
-          aria-label={`Racha de ${plan.streak} días`}
-        >
-          <Flame className="size-[18px]" aria-hidden strokeWidth={2.4} />
-          {plan.streak} {plan.streak === 1 ? "día" : "días"}
+        <div className="flex shrink-0 items-center gap-2">
+          <div
+            className="flex items-center gap-1.5 rounded-full bg-[#ffe8d6] px-3 py-2 text-[15px] font-bold text-[#9a3412]"
+            aria-label={`Racha de ${plan.streak} días`}
+          >
+            <Flame className="size-[18px]" aria-hidden strokeWidth={2.4} />
+            {plan.streak} {plan.streak === 1 ? "día" : "días"}
+          </div>
+          <Link href="/settings" aria-label="Ajustes" className="flex size-10 items-center justify-center rounded-full bg-white text-muted md:hidden">
+            <Settings className="size-5" aria-hidden strokeWidth={2.2} />
+          </Link>
         </div>
       </header>
 
@@ -78,6 +83,26 @@ export function TodayView({
           <ArrowRight className="size-5" aria-hidden strokeWidth={2.6} />
         </Link>
       )}
+
+      {/* Mike Chat: aprender chateando con el profesor (Fase G) */}
+      <Link
+        href="/mike"
+        className="flex items-center gap-3.5 rounded-[22px] bg-white px-4 py-3.5 shadow-[0_1px_2px_rgba(21,23,58,0.06)] transition-transform active:scale-[0.98] pm-rise"
+      >
+        <span className="relative flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-soft font-display text-xl font-black text-ink">
+          M<i className="absolute bottom-0 right-0 size-3.5 rounded-full border-2 border-white bg-[#4ade80]" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center justify-between gap-2">
+            <span className="font-extrabold">Professor Mike</span>
+            <span className="text-xs font-bold text-[#16a34a]">en línea</span>
+          </p>
+          <p className="truncate text-sm text-muted">
+            💬 {plan.topic ? `Aprende chateando: ${plan.topic.title}` : "Aprende chateando conmigo, paso a paso"}
+          </p>
+        </div>
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#16a34a] text-xs font-extrabold text-white">1</span>
+      </Link>
 
       {/* Tarjeta principal: meta del día + tema + acción */}
       <section className="space-y-5 rounded-[28px] bg-ink p-6 text-white pm-rise" aria-labelledby="today-title">
