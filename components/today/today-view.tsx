@@ -84,6 +84,21 @@ export function TodayView({
         </Link>
       )}
 
+      {/* Nivel completo: prueba para subir */}
+      {plan.allDone && (
+        <Link
+          href="/placement"
+          className="flex items-center gap-4 rounded-[22px] bg-learn px-5 py-4 text-ink transition-transform active:scale-[0.98] pm-pop"
+        >
+          <span className="text-3xl" aria-hidden>🏆</span>
+          <div className="flex-1">
+            <p className="font-extrabold">¡Completaste el nivel {plan.level}!</p>
+            <p className="text-sm">Haz la prueba para subir de nivel · 6 min</p>
+          </div>
+          <ArrowRight className="size-5" aria-hidden strokeWidth={2.6} />
+        </Link>
+      )}
+
       {/* Mike Chat: aprender chateando con el profesor (Fase G) */}
       <Link
         href="/mike"

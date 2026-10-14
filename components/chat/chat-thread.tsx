@@ -230,11 +230,16 @@ function DoneCard({ state, goal, lang, onNext, onRestart, last }: {
           {goal.todayMinutes} de {goal.goal} min hoy{goal.justReached ? " · ¡meta cumplida!" : ""}
         </p>
       )}
+      {done && last && (
+        <Link href="/placement" className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-learn font-extrabold text-ink">
+          🏆 {es ? "Completaste el nivel: prueba para subir" : "Level complete: take the level-up test"}
+        </Link>
+      )}
       {done && !last ? (
         <button type="button" onClick={onNext} className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-brand-soft font-extrabold text-ink">
           {es ? "Siguiente tema" : "Next topic"} <ArrowRight className="size-5" aria-hidden />
         </button>
-      ) : (
+      ) : done && last ? null : (
         <button type="button" onClick={onRestart} className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-brand-soft font-extrabold text-ink">
           <RotateCcw className="size-5" aria-hidden /> {es ? "Repetir el tema" : "Repeat the topic"}
         </button>

@@ -5,13 +5,14 @@ import { ApiKeysPanel } from "@/components/settings/api-keys-panel";
 import { GoalPicker } from "@/components/settings/goal-picker";
 import { PlacementCard } from "@/components/settings/placement-card";
 import { PurposePicker } from "@/components/settings/purpose-picker";
+import { PasswordCard } from "@/components/settings/password-card";
 
 export default function SettingsPage() {
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Ajustes</p>
-        <h1 className="text-2xl font-semibold md:text-3xl">Configuración</h1>
+      <header className="space-y-1 pm-rise">
+        <p className="text-sm font-bold uppercase tracking-widest text-brand">Ajustes</p>
+        <h1 className="font-display text-3xl font-extrabold tracking-tight">Tu cuenta</h1>
       </header>
 
       <PlacementCard />
@@ -22,10 +23,12 @@ export default function SettingsPage() {
 
       <ApiKeysPanel />
 
-      <form action={logout} className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
+      <PasswordCard />
+
+      <form action={logout} className="border-t border-line pt-6">
         <button
           type="submit"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-5 py-3 font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 sm:w-auto"
+          className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 font-bold text-ink transition-transform active:scale-[0.98]"
         >
           <LogOut className="size-4" aria-hidden />
           Cerrar sesión

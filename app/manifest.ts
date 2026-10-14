@@ -6,11 +6,11 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Professor Mike — English A1 → C1",
     short_name: "Professor Mike",
-    description: "Tu profesor de inglés con IA: lecciones diarias, ejercicios y progreso.",
+    description: "Tu profesor de inglés con IA: aprende chateando con Mike, paso a paso.",
     start_url: "/today",
     display: "standalone",
-    background_color: "#fafafa",
-    theme_color: "#2563eb",
+    background_color: "#eef0fa",
+    theme_color: "#15173a",
     lang: "es",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
